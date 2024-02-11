@@ -6,7 +6,7 @@ NPROC     := $(shell nproc)
 # (Default: 21 - Android 5.0 Lollipop)
 # See https://apilevels.com/ for Android API versions.
 # Note: If you building for 64-bit, you should target 21 and higher.
-API ?= 21
+API ?= 28
 
 # Android CPU specific variables to build:
 # (Default: ARMv7-A 32-bit)
@@ -26,9 +26,21 @@ API ?= 21
 # - HOST:   x86_64-linux-android
 # - TARGET: x86_64-linux-android
 # - ABI:    x86_64
-HOST   ?= armv7a-linux-androideabi
-TARGET ?= arm-linux-androideabi
-ABI    ?= armeabi-v7a
+ABI    ?= arm64-v8a
+
+ifeq ($(ABI), armeabi-v7a)
+	HOST   := armv7a-linux-androideabi
+	TARGET := arm-linux-androideabi
+else ifeq ($(ABI), arm64-v8a)
+	HOST   := aarch64-linux-android
+	TARGET := aarch64-linux-android
+else ifeq ($(ABI), x86)
+	HOST   := i686-linux-android
+	TARGET := i686-linux-android
+else ifeq ($(ABI), x86_64)
+	HOST   := x86_64-linux-android
+	TARGET := x86_64-linux-android
+endif
 
 # Define directories
 PREFIX            := $(HOST)$(API)

@@ -1,6 +1,7 @@
 package com.hatkid.mkxpz;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -20,7 +21,6 @@ import android.os.Handler;
 import android.os.Vibrator;
 import android.os.VibrationEffect;
 import android.os.storage.StorageManager;
-import android.os.storage.OnObbStateChangeListener;
 import android.net.Uri;
 import android.provider.Settings;
 import android.util.Log;
@@ -29,6 +29,7 @@ import java.util.Locale;
 import java.io.File;
 
 import org.libsdl.app.SDLActivity;
+import com.hatkid.mkxpz.BuildConfig;
 import com.hatkid.mkxpz.gamepad.Gamepad;
 import com.hatkid.mkxpz.gamepad.GamepadConfig;
 
@@ -38,9 +39,7 @@ public class MainActivity extends SDLActivity
     // Put your Java-side stuff here.
 
     private static final String TAG = "mkxp-z[Activity]";
-    private static final String GAME_PATH_DEFAULT = Environment.getExternalStorageDirectory() + "/mkxp-z";
-    private static String GAME_PATH = GAME_PATH_DEFAULT;
-    private static String OBB_MAIN_FILENAME;
+    private static String GAME_PATH;
     private static boolean DEBUG = false;
 
     protected boolean mStarted = false;
@@ -69,37 +68,6 @@ public class MainActivity extends SDLActivity
         }
     }
 
-    OnObbStateChangeListener obbListener = new OnObbStateChangeListener()
-    {
-        @Override
-        public void onObbStateChange(String path, int state)
-        {
-            super.onObbStateChange(path, state);
-
-            Log.v(TAG, "OBB state of " + path + " changed to " + state);
-
-            switch (state)
-            {
-                case OnObbStateChangeListener.MOUNTED:
-                    String obbPath = mStorageManager.getMountedObbPath(path);
-                    Log.v(TAG, "OBB " + path + " is mounted to " + obbPath);
-                    GAME_PATH = obbPath;
-                    break;
-
-                case OnObbStateChangeListener.UNMOUNTED:
-                    Log.v(TAG, "OBB " + path + " is unmounted");
-                    GAME_PATH = GAME_PATH_DEFAULT;
-                    break;
-
-                default:
-                    Log.e(TAG, "Failed to mount OBB " + path + ": Got state " + state);
-                    break;
-            }
-
-            runSDLThread();
-        }
-    };
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data)
     {
@@ -115,16 +83,12 @@ public class MainActivity extends SDLActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        GAME_PATH = getApplicationContext().getFilesDir().getPath();
 
         mMainHandler = new Handler(getMainLooper());
 
         mStorageManager = (StorageManager) getSystemService(STORAGE_SERVICE);
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-
-        // Get main OBB filepath
-        final String obbPrefix = "main"; // "main", "patch"
-        final int obbVersion = 1;
-        OBB_MAIN_FILENAME = getObbDir() + "/" + obbPrefix + "." + obbVersion + "." + getPackageName() + ".obb";
 
         // Get Debug flag
         try {
@@ -174,24 +138,7 @@ public class MainActivity extends SDLActivity
     protected void onStart()
     {
         super.onStart();
-
-        if (!mStarted) {
-            // Check for main OBB file
-            if (new File(OBB_MAIN_FILENAME).exists()) {
-                Log.v(TAG, "Main OBB file found, starting with main OBB mount");
-
-                // Try to mount main OBB file
-                mStorageManager.mountObb(OBB_MAIN_FILENAME, null, obbListener);
-            } else {
-                Log.v(TAG, "Main OBB file not found, starting without main OBB mount");
-
-                // Run from default game directory
-                runSDLThread();
-            }
-        } else {
-            // onStart: Resume SDL thread
-            runSDLThread();
-        }
+        runSDLThread();
     }
 
     @Override
@@ -326,6 +273,7 @@ public class MainActivity extends SDLActivity
      * 
      * @param duration milliseconds duration of vibration
      */
+    @TargetApi(Build.VERSION_CODES.Q)
     @SuppressWarnings("unused")
     private static void vibrate(int duration)
     {
@@ -333,11 +281,7 @@ public class MainActivity extends SDLActivity
             duration = 10000;
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            mVibrator.vibrate(VibrationEffect.createOneShot(duration, VibrationEffect.EFFECT_HEAVY_CLICK));
-        } else {
-            mVibrator.vibrate(duration);
-        }
+        mVibrator.vibrate(VibrationEffect.createOneShot(duration, VibrationEffect.EFFECT_HEAVY_CLICK));
     }
 
     /**
@@ -361,6 +305,6 @@ public class MainActivity extends SDLActivity
     @SuppressWarnings("unused")
     private static boolean inMultiWindow(Activity activity)
     {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && activity.isInMultiWindowMode();
+        return activity.isInMultiWindowMode();
     }
 }
