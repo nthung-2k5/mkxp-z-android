@@ -12,6 +12,11 @@ if [[ ! -d "libiconv" ]]; then
   rm -f libiconv-1.17.tar.gz
 fi
 
+if [[ ! -d "fluidsynth" ]]; then
+  echo "Downloading FluidSynth"
+  git clone $GIT_ARGS https://github.com/VolcanoMobile/fluidsynth-android.git fluidsynth
+fi
+
 # OpenSSL 3.2.1
 if [[ ! -d "openssl" ]]; then
   echo "Downloading OpenSSL..."

@@ -145,7 +145,7 @@ CONFIGURE := $(CONFIGURE_ENV) ./configure $(CONFIGURE_ARGS)
 CMAKE     := $(CONFIGURE_ENV) cmake .. $(CMAKE_ARGS)
 
 
-.PHONY: all init clean iconv openal openssl ruby clean-iconv clean-openal clean-openssl clean-ruby
+.PHONY: all init clean iconv openal fluidsynth openssl ruby clean-iconv clean-openal clean-fluidsynth clean-openssl clean-ruby
 
 default: all
 
@@ -168,6 +168,16 @@ $(LIBDIR)/libopenal.so: openal/cmakebuild/Makefile
 openal/cmakebuild/Makefile: openal/CMakeLists.txt
 	cd openal; mkdir cmakebuild; cd cmakebuild; \
 	$(CMAKE) -DLIBTYPE=SHARED $(OPENAL_CONFIGURE_ARGS)
+
+# -------------------- FluidSynth --------------------
+fluidsynth: init $(LIBDIR)/libfluidsynth.so
+
+$(LIBDIR)/libfluidsynth.so: fluidsynth/cmakebuild/Makefile
+	cd fluidsynth/cmakebuild; make -j$(NPROC); make install
+
+fluidsynth/cmakebuild/Makefile: fluidsynth/CMakeLists.txt
+	cd fluidsynth; mkdir cmakebuild; cd cmakebuild; \
+	$(CMAKE) -DBUILD_SHARED_LIBS=true
 
 # -------------------- OpenSSL --------------------
 openssl: init $(LIBDIR)/libssl.a
@@ -203,12 +213,15 @@ clean-iconv:
 clean-openal:
 	-cd openal; rm -rf cmakebuild
 
+clean-fluidsynth:
+	-cd fluidsynth; rm -rf cmakebuild
+
 clean-openssl:
 	-cd openssl; make clean; rm Makefile
 
 clean-ruby:
 	-cd ruby; make clean; rm Makefile; rm configure
 
-clean: clean-iconv clean-openal clean-openssl clean-ruby
+clean: clean-iconv clean-openal clean-fluidsynth clean-openssl clean-ruby
 
-all: iconv openal openssl ruby
+all: iconv openal fluidsynth openssl ruby
