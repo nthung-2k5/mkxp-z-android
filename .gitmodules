@@ -38,3 +38,6 @@
 	path = app/jni/SDL2_sound
 	url = https://github.com/icculus/SDL_sound
 	ignore = dirty
+[submodule "app/jni/mkxp-z"]
+	path = app/jni/mkxp-z
+	url = https://github.com/nthung-2k5/mkxp-z.git
